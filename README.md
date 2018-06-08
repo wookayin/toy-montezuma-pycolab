@@ -1,6 +1,9 @@
 Toy Montezuma's Revenge
 =======================
 
+![](assets/ToyMontezumaRevenge.png)
+
+
 References: Deep Abstract Q-Networks (Roderick et al., 2017)
 
 
