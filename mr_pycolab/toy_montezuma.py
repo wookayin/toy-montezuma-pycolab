@@ -121,7 +121,7 @@ class DoorDrape(plab_things.Drape):
         if self.curtain[py - dy[actions], px - dx[actions]]:
           # open the door
           self.curtain[py - dy[actions], px - dx[actions]] = False
-          the_plot.add_reward(400.0)
+          the_plot.add_reward(300.0)
           # one key is taken off.
           the_plot['num_keys'] -= 1
 
