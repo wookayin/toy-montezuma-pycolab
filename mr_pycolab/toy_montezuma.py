@@ -151,13 +151,20 @@ class RoomCropper(cropping.ObservationCropper):
 
 
 
-def main(argv=()):
-  del argv  # Unused.
+import argparse
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--full-observation', action='store_true', default=False)
 
+
+def main(args):
   # Build a four-rooms game.
   game = make_game()
 
-  croppers = [RoomCropper(rows=11, cols=11, to_track='P')]
+  if args.full_observation:
+    croppers = []
+  else:
+    # partial observation as in the original MontezumaRevenge
+    croppers = [RoomCropper(rows=11, cols=11, to_track='P')]
 
   # Make a CursesUi to play it with.
   ui = human_ui.CursesUi(
@@ -175,4 +182,5 @@ def main(argv=()):
 
 
 if __name__ == '__main__':
-  main(sys.argv)
+  args = parser.parse_args()
+  main(args)
