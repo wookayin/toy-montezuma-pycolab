@@ -9,6 +9,7 @@ import copy
 
 import numpy as np
 import six
+import gym
 
 from pycolab import ascii_art
 from pycolab import human_ui
@@ -151,6 +152,48 @@ class RoomCropper(cropping.ObservationCropper):
 
 
 
+class ToyMontezumaRevengeEnv(gym.Env):
+    """
+    Wrapper to adapt to OpenAI's gym interface.
+    """
+    action_space = gym.spaces.Discrete(5)  # D U L R ?
+    observation_space = gym.spaces.Box(low=0, high=1, shape=[11, 11, 5], dtype=np.uint8)
+
+    def _to_obs(self, observation):
+        hallway = observation.layers[' '] | observation.layers['.'] | observation.layers[',']
+        ob = np.stack([observation.layers[c] for c in 'PXKD'] + [hallway], axis=2).astype(np.uint8)
+        return ob
+
+    def reset(self):
+        self._game = make_game()
+        self._cropper = RoomCropper(11, 11, 'P')        # TODO: or None (obs space will change)
+        self._cropper.set_engine(self._game)
+
+        observation, reward, _ = self._game.its_showtime()
+        observation = self._cropper.crop(observation)
+        # observation.board : (11, 11) uint8 array
+
+        # stack it into 11x11x5 observation
+        return self._to_obs(observation)
+
+    def step(self, action):
+        observation, reward, _ = self._game.play(action)
+        observation = self._cropper.crop(observation)
+
+        if reward is None: reward = 0
+        done = self._game.game_over
+        info = {}
+        return self._to_obs(observation), reward, done, info
+
+    def location_tuple(self):
+        """Get the (y, x, room) tuple that represents the location of the agent."""
+        py, px = self._game.things['P'].position.row, self._game.things['P'].position.col
+
+        # abstraction breakage -- coupled with how RoomCropper works
+        room = int(py // 11) * 10 + int(px // 11)
+        return (py % 11, px % 11, room)
+
+
 import argparse
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--full-observation', action='store_true', default=False)
@@ -161,7 +204,7 @@ def main(args):
   game = make_game()
 
   if args.full_observation:
-    croppers = []
+    croppers = None
   else:
     # partial observation as in the original MontezumaRevenge
     croppers = [RoomCropper(rows=11, cols=11, to_track='P')]
